@@ -1,4 +1,4 @@
-# DevOps Fundamentals
+# 10. DevOps & Cloud Security
 
 ## 1. Core DevOps Concepts
 

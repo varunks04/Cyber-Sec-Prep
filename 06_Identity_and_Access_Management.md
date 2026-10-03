@@ -1,23 +1,25 @@
-# Identity and Access Management (IAM) Fundamentals
+# 6. Identity and Access Management (IAM)
 
 ## 1. Core IAM Concepts
 
 ### 1.1 What is IAM?
-**Meaning:** The framework of policies and technologies ensuring the right individuals/systems have the right access to the right resources, at the right time, for the right reasons.
+**Meaning:** The framework of policies, processes, and technologies ensuring the right identities have the right access to the right enterprise resources, at the right time, for legitimate business reasons.
 
 ### 1.2 Identification vs Authentication vs Authorization (Recap)
 | Term | Meaning |
 |---|---|
-| Identification | Claiming an identity (username) |
-| Authentication | Proving the identity (password, MFA) |
-| Authorization | Determining what the authenticated identity can access |
+| Identification | Claiming an identity (username, email) |
+| Authentication | Proving the identity (password, FIDO2 key, biometric) |
+| Authorization | Determining what the authenticated identity can access (permissions, roles) |
 
 ### 1.3 Identity Lifecycle
-**Meaning:** The full process of managing a user's access from creation to removal.
+**Meaning:** The complete lifecycle of an identity from initial creation to final decommissioning:
 ```
-Provisioning → Access Granting → Access Review/Recertification → Modification (role change) → Deprovisioning
+Provisioning ──► Access Granting ──► Periodic Recertification ──► Role Modification ──► Deprovisioning
 ```
-**Interview Tip:** **Deprovisioning** (removing access when an employee leaves/changes roles) is a frequently tested area — delayed deprovisioning is one of the most common real-world audit findings and insider-risk sources.
+* **Provisioning (Joiner):** Onboarding a user and creating accounts based on role templates.
+* **Modification (Mover):** Updating permissions when an employee changes departments or teams.
+* **Deprovisioning (Leaver):** Timely revocation of all access when an employee departs. Delayed offboarding is one of the most common causes of insider threat and audit failure.
 
 **Common Interview Questions:**
 - What is the identity lifecycle, and why is timely deprovisioning critical?
@@ -27,33 +29,69 @@ Provisioning → Access Granting → Access Review/Recertification → Modificat
 
 ## 2. Authentication Technologies
 
-### 2.1 MFA / 2FA
-**Meaning:** Requiring more than one authentication factor to verify identity.
+### 2.1 MFA & Phishing-Resistant Authentication (FIDO2)
+* **Multi-Factor Authentication (MFA):** Requiring proof across two or more independent factor categories (Knowledge, Possession, Inherence).
+* **Phishing-Resistant MFA (FIDO2 / WebAuthn):**
+  * Legacy MFA (SMS OTP, Push Notifications) is vulnerable to SIM-swapping, reverse-proxy phishing (Evilginx), and **MFA Fatigue / Push Bombing** (bombarding a user with push requests until they hit accept).
+  * **FIDO2 / Passkeys:** Based on public-key cryptography. The private key remains locked inside hardware (YubiKey / TPM). During authentication, the browser cryptographically binds the challenge to the specific domain origin (**Origin Binding**), making credential interception by phishing proxies impossible.
+
 **Common Interview Questions:**
-- What's a phishing-resistant MFA method vs a weaker one? *(FIDO2/hardware keys are phishing-resistant; SMS OTP is weaker — vulnerable to SIM swapping)*
+- What's a phishing-resistant MFA method vs a weaker one? *(FIDO2/hardware keys are phishing-resistant because origin-binding prevents proxy interception; SMS OTP and mobile push are vulnerable to SIM swapping and push fatigue)*
 
 ### 2.2 SSO (Single Sign-On)
-**Meaning:** Allows a user to authenticate once and gain access to multiple independent systems/applications without re-authenticating.
-**Security relevance:** SSO improves user experience and centralizes authentication controls, but a compromised SSO account becomes a **single point of failure** across all connected apps.
+**Meaning:** An authentication scheme that allows a user to log in once with a single set of credentials and access multiple independent software systems without re-entering passwords.
+* **Security Trade-off:** Significantly improves user experience, reduces password fatigue, and centralizes access revocation. However, the Identity Provider (IdP) becomes a **single point of failure** (a compromised IdP grants access to all connected applications).
 
-### 2.3 SAML vs OAuth vs OpenID Connect (OIDC)
-| Protocol | Primary Purpose | Format |
-|---|---|---|
-| SAML | Authentication (enterprise SSO) | XML |
-| OAuth 2.0 | Authorization (delegated access to resources) | JSON/Tokens |
-| OIDC | Authentication (built on top of OAuth 2.0) | JSON Web Tokens (JWT) |
+### 2.3 Federation & SSO Protocols: SAML vs OAuth 2.0 vs OIDC
+| Protocol | Primary Purpose | Token Format | Architecture Focus |
+|---|---|---|---|
+| **SAML 2.0** | Enterprise Authentication (SSO) | XML (SAML Assertions) | Enterprise web applications, legacy corporate portals |
+| **OAuth 2.0** | **Authorization** (Delegated Access) | JSON / Opaque Tokens | API authorization, granting third-party apps access without sharing passwords |
+| **OIDC (OpenID Connect)** | **Authentication** (Built on OAuth 2.0) | **JWT (JSON Web Tokens)** | Modern web/mobile apps, "Sign in with Google/Apple" |
 
-**Interview Tip:** The most commonly confused distinction — **OAuth is about authorization** ("can this app access my data?"), while **SAML/OIDC are about authentication** ("who is this user?"). OIDC essentially adds an identity layer on top of OAuth.
+> **Interview Tip — The Fundamental Distinction:**
+> - **OAuth 2.0 is NOT an authentication protocol:** It tells an application *"The user has authorized you to read their Google Drive files"* (Access Token).
+> - **OIDC adds identity on top of OAuth:** It tells the application *"This user is `alice@example.com`"* (ID Token).
+
+#### OAuth 2.0 Authorization Code Flow (The Gold Standard)
+```
+User / Browser               Client App                Authorization Server (IdP)      Resource Server (API)
+      │                           │                                │                             │
+      ├────── 1. Click "Login" ──►│                                │                             │
+      │◄── 2. Redirect to IdP ────┤                                │                             │
+      │                           │                                │                             │
+      ├────── 3. Authenticate & Grant Consent ────────────────────►│                             │
+      │◄───── 4. Redirect with Authorization Code ─────────────────┤                             │
+      │                           │                                │                             │
+      ├────── 5. Forward Auth Code│                                │                             │
+      │       to Client App ─────►│                                │                             │
+      │                           ├──── 6. Exchange Code + Secret ─►│                             │
+      │                           │◄─── 7. Return Access & ID Token─┤                             │
+      │                           │                                │                             │
+      │                           ├──── 8. API Request with Access Token (Bearer) ──────────────►│
+      │                           │◄─── 9. Protected Data ──────────────────────────────────────┤
+```
+
+### 2.4 Kerberos Authentication Architecture
+The default authentication protocol in Windows Active Directory environments. Built on a trusted third party: the **Key Distribution Center (KDC)**.
+
+```
+[ Client ] ──── 1. AS-REQ (Username + Timestamp encrypted w/ user hash) ────► [ Authentication Server (AS) ]
+           ◄─── 2. AS-REP (TGT encrypted w/ KRBTGT + Client Session Key) ────┘
+
+[ Client ] ──── 3. TGS-REQ (TGT + Authenticator + Requested Service SPN) ───► [ Ticket Granting Server (TGS) ]
+           ◄─── 4. TGS-REP (Service Ticket encrypted w/ Service Account Hash)┘
+
+[ Client ] ──── 5. AP-REQ (Service Ticket + Authenticator) ─────────────────► [ Target Application Server ]
+           ◄─── 6. AP-REP (Mutual Authentication confirmed) ────────────────┘
+```
+
+* **Why Kerberos is Secure:** User passwords are **never sent across the network**; tickets use timestamps to mitigate replay attacks (requiring clock synchronization within 5 minutes).
 
 **Common Interview Questions:**
-- Difference between SAML and OAuth?
-- Difference between OAuth and OpenID Connect?
-- Give a real-world example of OAuth (e.g., "Login with Google" granting a third-party app limited access).
-
-### 2.4 Kerberos (Recap from AD context)
-**Meaning:** Ticket-based authentication protocol used by default in Active Directory, relying on a trusted third party (Key Distribution Center).
-**Common Interview Questions:**
-- Why is Kerberos considered more secure than NTLM?
+- Difference between SAML, OAuth 2.0, and OpenID Connect?
+- Walk through how Kerberos uses Tickets (TGT vs Service Ticket).
+- Why is Kerberos preferred over NTLM? *(NTLM is vulnerable to Pass-the-Hash, relay attacks, and uses weaker MD4 hashing; Kerberos supports mutual authentication, uses AES encryption, and relies on tickets rather than static password hashes)*
 
 ---
 

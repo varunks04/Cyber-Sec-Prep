@@ -1,4 +1,4 @@
-# Core Computer Science Fundamentals
+# 1. Computer Science & Programming Fundamentals
 
 ## 1. Data Structures
 
