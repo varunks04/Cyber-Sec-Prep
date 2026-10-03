@@ -1,0 +1,144 @@
+Round 1: Online Assessment 
+
+Soft skills assessment 
+• Soft skills: 25 multiple choice questions (MCQ) in 15 minutes on Mercer | Mettl. 
+• Choose the BEST response. More than one option may seem reasonable; select the most proportionate, evidence
+based, responsible and appropriate response. 
+• There is no negative marking for the soft-skills section. 
+What the soft-skills assessment covers 
+Attention to detail 
+Critical thinking and problem solving 
+Presence of mind and judgment 
+Learning agility and curiosity 
+Pattern recognition and connecting 
+the dots 
+Professional responsibility and 
+collaboration
+
+Round 1 : Technical assessment 
+• Technical skills:  25 multiple choice questions (MCQ) in 20 minutes on Mercer | Mettl. 
+• Choose the BEST response. More than one option may seem reasonable; select the most proportionate, evidence
+based, responsible and appropriate response. 
+• There is no negative marking for the soft-skills section. 
+
+What the technical assessment covers 
+Core Computers Science 
+Networking fundamentals 
+Cybersecurity fundamentals 
+Identity Access Management (IAM) 
+fundamentals 
+AI and ML fundamentals 
+DevOps fundamentals
+
+Round Two: Group Discussion 
+10 October 2026  |  On-site round 
+Group discussion at a glance 
+What to expect Broad areas to prepare How to prepare 
+A facilitated discussion on a 
+workplace, technology or 
+cybersecurity-related topic. The 
+exact topic is shared on the spot. 
+Cybersecurity basics and ethics 
+Passwords, authentication, privacy, 
+security monitoring and responsible 
+decisions. 
+Read lightly. Build a point of view 
+with simple reasons and examples. 
+You will get a short preparation 
+window before the discussion begins. 
+AI, technology and work 
+AI in learning, productivity, attackers, 
+defenders and independent thinking. 
+Use a simple structure: your view, 
+why, an alternate perspective and a 
+practical conclusion. 
+The panel will look for clear thinking, 
+listening, collaboration and relevance 
+— not who speaks the most. 
+Workplace judgment and 
+collaboration 
+Hybrid work, speed versus quality, 
+teamwork and business trade-offs. 
+Draw from college projects, 
+internships, technology news or 
+everyday examples. 
+GD tips 
+THINK 
+Take a moment to understand the topic and identify two 
+or three points. 
+CONTRIBUTE 
+Enter the conversation with a clear point, example or 
+question. 
+CONNECT 
+Build on others’ ideas and acknowledge different 
+perspectives. 
+LISTEN 
+Avoid interrupting. Make space for others and stay 
+engaged. 
+SUMMARIZE 
+If the opportunity arises, close with a balanced, concise 
+view. 
+BE YOURSELF 
+Stay calm, respectful and authentic. The panel is 
+assessing potential, not perfection. 
+
+Technical Panel + Final Preparation 
+Technical interview 
+• Be ready to explain your academic projects, internships, and your individual contribution. 
+• Prepare on the technical topics outlined below 
+• Think aloud when solving a problem. Panels value structured reasoning, not only the final answer. 
+• If you do not know an answer, explain what you understand, ask a clarifying question, and describe how you would 
+learn or verify it. 
+Core Computers Science 
+• Operating Systems: Processes 
+vs Threads, Deadlock, 
+Scheduling, Virtual Memory, 
+Paging 
+• DBMS: SQL Joins, Normalization 
+(1NF–3NF), ACID, Indexes 
+• OOP Concepts: Inheritance, 
+Polymorphism, Encapsulation, 
+Abstraction 
+Networking fundamentals 
+• OSI & TCP/IP model layers and 
+functions 
+• TCP 3-way handshake, TCP vs 
+UDP 
+• IP addressing & subnetting 
+basics, ARP, DNS resolution flow 
+• HTTP vs HTTPS, SSL/TLS 
+handshake (high level) 
+Cybersecurity fundamentals 
+• CIA Triad, Authentication vs 
+Authorization 
+• Symmetric vs Asymmetric 
+encryption (examples) 
+• Hashing, Digital Signatures, 
+Certificates 
+• Common attacks: Phishing, SQL 
+Injection, XSS, CSRF, DDoS, 
+MITM 
+• OWASP Top 10 (know names + 
+one-line meaning) 
+• Firewall, IDS/IPS, VPN basics 
+Identity Access Management (IAM) 
+fundamentals 
+• IAM Core Concepts 
+• Authentication Fundamentals 
+• Directory Services 
+• Single Sign-On 
+ 
+AI and ML fundamentals 
+• Core ML Fundamentals 
+• Deep Learning & Neural 
+Networks 
+• Generative AI & LLMs 
+• AI in Cybersecurity 
+DevOps fundamentals 
+• Git & version control 
+• Scripting & automation (Bash 
+and Python) 
+• CI/CD — fundamentals 
+• Docker and Containers 
+fundamentals 
+• Cloud computing fundamentals
