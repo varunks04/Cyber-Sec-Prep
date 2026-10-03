@@ -162,6 +162,39 @@ nmap -sU -p 53,161 192.168.1.10
 nmap --script vuln 192.168.1.10
 ```
 
+```
+Nmap Port Scan Packet Flow (Open Port vs Closed Port):
+
+TCP SYN Stealth Scan (-sS):
+  Scanner (Attacker / Analyst)                      Target Server (Port 80 Open)
+    │                                                            │
+    ├────── 1. TCP SYN [Flag: SYN] ─────────────────────────────►│
+    │                                                            │
+    │◄───── 2. TCP SYN-ACK [Flags: SYN, ACK] ────────────────────┤
+    │                                                            │
+    ├────── 3. TCP RST [Flag: RST] ─────────────────────────────►│ (Connection torn down before completion!)
+    ▼                                                            ▼
+  [ Result: Port OPEN — 3-way handshake never finished; avoids standard application logs ]
+
+TCP Full Connect Scan (-sT):
+  Scanner (Unprivileged User)                       Target Server (Port 80 Open)
+    │                                                            │
+    ├────── 1. TCP SYN ─────────────────────────────────────────►│
+    │◄───── 2. TCP SYN-ACK ──────────────────────────────────────┤
+    ├────── 3. TCP ACK ─────────────────────────────────────────►│ (Handshake Complete: Connection Established!)
+    ├────── 4. TCP RST / FIN ───────────────────────────────────►│ (Immediately terminates connection)
+    ▼
+  [ Result: Port OPEN — Full connection logged in application access logs ]
+
+Closed Port Response:
+  Scanner                                           Target Server (Port 9999 Closed)
+    │                                                            │
+    ├────── 1. TCP SYN ─────────────────────────────────────────►│
+    │◄───── 2. TCP RST-ACK [Flags: RST, ACK] ────────────────────┤
+    ▼
+  [ Result: Port CLOSED ]
+```
+
 > **Interview Concept — SYN Scan (`-sS`) vs Connect Scan (`-sT`):**
 > * A **SYN Scan** sends a `SYN`. If the port is open, the target replies with `SYN-ACK`. Nmap immediately sends an `RST` to tear down the connection before it completes. This makes it faster and less likely to be logged by legacy applications.
 > * A **Connect Scan** uses the operating system's standard `connect()` system call, completing the full 3-way handshake. Slower and reliably recorded in application access logs.

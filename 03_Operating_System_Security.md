@@ -28,6 +28,34 @@
 
 **Example:** `svchost.exe` on Windows hosts multiple services; on Linux, `sshd` runs as a daemon listening for SSH connections.
 
+```
+Parent-Child Process Tree: Normal vs Malicious Execution (SOC Triage View):
+
+Normal Business Workflow:
+  [ explorer.exe ] (PID 1420)
+         │
+         ▼
+  [ WINWORD.EXE ] (PID 3840) ──► (User edits .docx file normally)
+
+Malicious Phishing / Macro Execution Tree (Immediate Alert):
+  [ explorer.exe ] (PID 1420)
+         │
+         ▼
+  [ WINWORD.EXE ] (PID 3840) ◄── Malicious macro executes on document open
+         │
+         ▼ (Spawns command prompt: ANOMALY)
+  [ cmd.exe ] (PID 5120)
+         │
+         ▼ (Spawns PowerShell with bypass flags: CRITICAL ALERT)
+  [ powershell.exe ] (PID 6240)
+         │  -ExecutionPolicy Bypass -NoProfile -EncodedCommand SQBFAFgA...
+         │
+         ▼ (Spawns living-off-the-land system discovery tools)
+  ├── [ whoami.exe ] (PID 7012)
+  ├── [ net.exe user ] (PID 7016)
+  └── [ curl.exe / certutil.exe ] (PID 7020) ──► Beaconing Outbound C2 (Port 443)
+```
+
 **Common Interview Questions:**
 - Why would a SOC analyst care about a process tree/parent-child relationship? *(e.g., `winword.exe` spawning `powershell.exe` is highly suspicious — indicates macro-based execution)*
 
@@ -40,6 +68,25 @@
 **Example:** `-rwxr-xr--` → Owner: rwx, Group: r-x, Others: r--
 **Numeric (octal) form:** rwx = 4+2+1 = 7. e.g., `chmod 755 file` = rwxr-xr-x.
 
+```
+Linux File Permissions & Octal Weight Breakdown:
+
+ Example: -rwxr-xr-- (755)
+ ┌───┬─────────────┬─────────────┬─────────────┐
+ │ - │  r   w   x  │  r   -   x  │  r   -   -  │
+ └───┴─────────────┴─────────────┴─────────────┘
+   │    │   │   │     │   │   │     │   │   │
+   │    4 + 2 + 1     4 + 0 + 1     4 + 0 + 0
+   │    ─────────     ─────────     ─────────
+   │        7             5             4
+   │      Owner         Group        Others
+   ▼
+ File Type:
+  '-' = Regular File
+  'd' = Directory
+  'l' = Symbolic Link
+```
+
 **Common Interview Questions:**
 - What does `chmod 777` mean, and why is it a security risk? *(Full read/write/execute for everyone — no restriction)*
 - What is SUID/SGID and why is it a privilege escalation risk? *(A SUID binary runs with the file owner's privileges, not the executing user's — misconfigured SUID root binaries are a classic privesc vector)*
@@ -47,6 +94,35 @@
 ### 3.3.2 Windows Permissions & ACLs
 **Meaning:** Windows uses Access Control Lists (ACLs) attached to objects, listing which users/groups have which permissions (Read, Write, Modify, Full Control).
 **Interview Tip:** Unlike Linux's simple rwx model, Windows ACLs are more granular (per-user, per-permission-type, allow/deny entries) — this granularity is also why misconfigurations are common.
+
+```
+Windows Access Control Evaluation Architecture:
+
+[ User / Subject ] ──► Holds [ Access Token ]
+                               ├── User SID (S-1-5-21-...)
+                               ├── Group SIDs (e.g., Domain Admins)
+                               ├── Privileges (e.g., SeDebugPrivilege)
+                               └── Integrity Level (Low / Medium / High / System)
+                                        │
+                                        ▼ Access Request (e.g., Write to file)
+                    ┌───────────────────────────────────────────────┐
+                    │ Security Reference Monitor (SRM)              │
+                    └───────────────────────┬───────────────────────┘
+                                            │ Evaluates against
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │ Target Object: Security Descriptor            │
+                    ├───────────────────────────────────────────────┤
+                    │ • Owner SID                                   │
+                    │ • Mandatory Integrity Level (Label)           │
+                    │ • Discretionary Access Control List (DACL):   │
+                    │     ├── ACE 1: DENY  (User Bob, Write)        │
+                    │     ├── ACE 2: ALLOW (Domain Users, Read)     │
+                    │     └── ACE 3: ALLOW (Admins, Full Control)   │
+                    │ • System Access Control List (SACL - Auditing)│
+                    └───────────────────────────────────────────────┘
+                    (DACL Rule: Explicit DENY always takes precedence over ALLOW)
+```
 
 ### 3.3.3 Users & Groups
 - **Linux:** `root` (UID 0) has full privileges; regular users use `sudo` for elevated actions.

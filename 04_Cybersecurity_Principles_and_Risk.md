@@ -101,6 +101,28 @@ Deploying multiple coordinated, heterogeneous security controls across physical,
 ### 4.3.4 Zero Trust Architecture (ZTA)
 * **Core Axiom:** *"Never trust, always verify."*
 * Eliminates the traditional "castle-and-moat" perimeter model where devices inside the internal corporate network were implicitly trusted.
+
+```
+NIST SP 800-207 Zero Trust Architecture (Control Plane vs Data Plane):
+
+                      ┌──────────────────────────────────────┐
+                      │        Policy Decision Point (PDP)   │
+                      │  ┌───────────────┐ ┌───────────────┐ │
+                      │  │ Policy Engine │ │ Policy Admin  │ │
+                      │  │ (Evaluation)  │ │ (Token Issue) │ │
+                      │  └───────▲───────┘ └───────┬───────┘ │
+                      └──────────┼─────────────────┼─────────┘
+        Continuous Context       │                 │ Dynamic Policy Update
+  (Identity + Device Health      │                 │
+   + GeoIP + Behavior Telemetry) │                 │
+                                 │ Control Plane   │
+  ═══════════════════════════════╪═════════════════╪════════════════════════════
+                                 │ Data Plane      ▼
+  [ Subject / User Device ] ─────┼─────────► [ Policy Enforcement Point ] ──► [ Enterprise Resource ]
+                                             │ (PEP: ZTNA Gateway / Proxy)│    (App / Database)
+                                             └────────────────────────────┘
+```
+
 * **Three Core Pillars (NIST SP 800-207):**
   1. **Continuous Verification:** Authenticate and authorize dynamically on every request based on all available data points (identity, device health, location, behavior).
   2. **Limit Blast Radius:** Micro-segment networks, enforce least privilege, and containerize workloads.
@@ -217,6 +239,36 @@ $$\text{DREAD Score} = \frac{D + R + E + A + D}{5}$$
 * **NIST Cybersecurity Framework (CSF 2.0):**
   * Six Core Functions: **Govern $\rightarrow$ Identify $\rightarrow$ Protect $\rightarrow$ Detect $\rightarrow$ Respond $\rightarrow$ Recover**.
   * Flexible, risk-based benchmark used globally across both government and private industry.
+
+```
+NIST Cybersecurity Framework (CSF 2.0) Core Functions:
+
+                    ┌─────────────────────────┐
+                    │      1. GOVERN (GV)     │
+                    │  Oversight & Strategy   │
+                    └────────────┬────────────┘
+                                 │
+           ┌─────────────────────┴─────────────────────┐
+           ▼                                           ▼
+┌─────────────────────┐                     ┌─────────────────────┐
+│   2. IDENTIFY (ID)  │                     │   3. PROTECT (PR)   │
+│ Assets, Risks, Gaps │                     │ Safeguards & Access │
+└──────────┬──────────┘                     └──────────┬──────────┘
+           │                                           │
+           └─────────────────────┬─────────────────────┘
+                                 ▼
+                    ┌─────────────────────────┐
+                    │     4. DETECT (DE)      │
+                    │ Continuous Monitoring   │
+                    └────────────┬────────────┘
+                                 │
+           ┌─────────────────────┴─────────────────────┐
+           ▼                                           ▼
+┌─────────────────────┐                     ┌─────────────────────┐
+│   5. RESPOND (RS)   │                     │   6. RECOVER (RC)   │
+│ Containment & Triage│                     │ Restoration & Resil │
+└─────────────────────┘                     └─────────────────────┘
+```
 * **ISO/IEC 27001:** International standard establishing requirements for an **Information Security Management System (ISMS)**; requires formalized risk assessments and continuous audits.
 * **SOC 2 (System and Organization Controls):** Standard for SaaS and cloud vendors, auditing service organizations based on **5 Trust Services Criteria**: Security, Availability, Processing Integrity, Confidentiality, and Privacy.
 * **Regulatory Compliance Mandates:**

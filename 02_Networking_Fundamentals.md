@@ -15,13 +15,54 @@
 | 2 | Data Link | Physical addressing (MAC) | Ethernet, Switch, ARP |
 | 1 | Physical | Raw bit transmission | Cables, NIC, Hubs |
 
+### 2.1.2 TCP/IP Model & OSI Mapping
+**Meaning:** A simplified 4-layer practical model used on the internet: **Application, Transport, Internet, Network Access**.
+
+```
+OSI 7-Layer Model           TCP/IP 4-Layer Model        Protocol Data Unit (PDU)
+┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
+│ 7. Application        │   │                       │   │                       │
+├───────────────────────┤   │ 4. Application        │   │ Data / Payload        │
+│ 6. Presentation       │   │    (HTTP, DNS, SSH)   │   │                       │
+├───────────────────────┤   │                       │   │                       │
+│ 5. Session            │   │                       │   │                       │
+├───────────────────────┤   ├───────────────────────┤   ├───────────────────────┤
+│ 4. Transport          │   │ 3. Transport (TCP/UDP)│   │ Segment (TCP) /       │
+│                       │   │                       │   │ Datagram (UDP)        │
+├───────────────────────┤   ├───────────────────────┤   ├───────────────────────┤
+│ 3. Network            │   │ 2. Internet (IP, ICMP)│   │ Packet                │
+├───────────────────────┤   ├───────────────────────┤   ├───────────────────────┤
+│ 2. Data Link          │   │ 1. Network Access /   │   │ Frame                 │
+├───────────────────────┤   │    Link (Ethernet,    │   ├───────────────────────┤
+│ 1. Physical           │   │    Wi-Fi, ARP)        │   │ Bits (10110...)       │
+└───────────────────────┘   └───────────────────────┘   └───────────────────────┘
+```
+
+#### Protocol Data Encapsulation & Decapsulation Flow
+```
+Transmitting Host (Encapsulation ──► Adding Headers downward):
+  [ Application Data ]
+    │
+    ▼ Add TCP Header
+  [ TCP Header | Application Data ]                      (Segment)
+    │
+    ▼ Add IP Header
+  [ IP Header | TCP Header | Application Data ]          (Packet)
+    │
+    ▼ Add Ethernet MAC Header & Frame Check Sequence (FCS) Trailer
+  [ MAC Header | IP Header | TCP Header | Data | FCS ]   (Frame)
+    │
+    ▼ Converted to electrical / optical / radio signals
+  [ 0 1 1 0 1 0 0 1 0 1 1 1 0 1 0 0 1 0 1 1 0 1 0 0 ]   (Bits)
+
+Receiving Host (Decapsulation ──► Stripping Headers upward):
+  Bits ──► Frame ──► Packet ──► Segment ──► Application Data
+```
+
 **Common Interview Questions:**
 - At which layer does a firewall operate? *(Traditional: Layer 3/4; NGFW/WAF: up to Layer 7)*
 - At which layer does a switch vs a router operate?
-
-### 2.1.2 TCP/IP Model
-**Meaning:** A simplified 4-layer practical model used on the internet: **Application, Transport, Internet, Network Access**.
-**Interview Tip:** Interviewers often ask how OSI layers map to TCP/IP layers — Application+Presentation+Session (OSI) = Application (TCP/IP); Data Link+Physical (OSI) = Network Access (TCP/IP).
+- Explain the difference between a Segment, a Packet, and a Frame. *(Segment = Layer 4 Transport unit with port numbers; Packet = Layer 3 Network unit with IP addresses; Frame = Layer 2 Data Link unit with MAC addresses and CRC checksum)*
 
 ---
 
@@ -38,14 +79,33 @@
 - Why does DNS use UDP but sometimes fall back to TCP? *(TCP used for zone transfers or responses >512 bytes)*
 - Why is TCP preferred for file transfer and UDP for video calls?
 
-### 2.2.1 TCP Three-Way Handshake
-**Meaning:** Process to establish a reliable TCP connection.
+### 2.2.1 TCP Three-Way Handshake & Connection Teardown
+**Meaning:** Process to establish and terminate a reliable TCP connection.
+
 ```
-Client → SYN → Server
-Server → SYN-ACK → Client
-Client → ACK → Server
+TCP 3-Way Handshake (Connection Establishment):
+Client (Active Open)                               Server (Passive Open)
+  │                                                         │
+  ├────── 1. SYN [Seq = 100, ACK = 0, CTL = SYN] ──────────►│ (SYN_RCVD)
+  │                                                         │
+  │◄───── 2. SYN-ACK [Seq = 300, ACK = 101, CTL = SYN,ACK]─┤ (ESTABLISHED)
+  │                                                         │
+  ├────── 3. ACK [Seq = 101, ACK = 301, CTL = ACK] ────────►│
+  ▼                                                         ▼
+[ Connection ESTABLISHED: Ready for reliable bidirectional data transmission ]
+
+TCP 4-Way Connection Teardown (Graceful Closure):
+Client                                             Server
+  │                                                         │
+  ├────── 1. FIN [Seq = 500, ACK = 800, CTL = FIN,ACK] ────►│ (CLOSE_WAIT)
+  │◄───── 2. ACK [Seq = 800, ACK = 501, CTL = ACK] ────────┤
+  │                                                         │ (Server finishes sending remaining data)
+  │◄───── 3. FIN [Seq = 801, ACK = 501, CTL = FIN,ACK] ────┤ (LAST_ACK)
+  ├────── 4. ACK [Seq = 501, ACK = 802, CTL = ACK] ────────►│ (CLOSED)
+  ▼ (TIME_WAIT: 2MSL timer before socket clean release)
 ```
-**Interview Tip:** A **SYN flood** attack abuses this handshake by sending many SYNs without completing the ACK, exhausting server resources (a DoS technique).
+
+**Interview Tip:** A **SYN flood** attack abuses this handshake by sending thousands of spoofed SYNs without completing the ACK step, exhausting server connection backlogs (**half-open connections**), leading to Denial of Service. Mitigated using **SYN Cookies**.
 
 ### 2.2.2 TCP Flags
 | Flag | Meaning |
@@ -86,6 +146,34 @@ Client → ACK → Server
 ### 2.3.4 Subnetting & CIDR
 **Meaning:** Dividing a network into smaller sub-networks; CIDR notation (`/24`) denotes the subnet mask length.
 **Example:** `192.168.1.0/24` = 256 addresses, mask `255.255.255.0`.
+
+```
+Understanding CIDR Subnetting (Example: 192.168.1.0/28):
+
+IPv4 Address (32 bits):
+┌───────────────────────────────────────────────┬──────────────┐
+│        Network Bits (Prefix = 28 bits)        │Host Bits (4b)│
+└───────────────────────────────────────────────┴──────────────┘
+ 11000000 . 10101000 . 00000001 . 0000               0000
+    192   .    168   .     1    .  0  (to 15)
+
+Subnet Mask (/28):
+ 11111111 . 11111111 . 11111111 . 11110000  = 255.255.255.240
+
+Host Calculation:
+• Host bits (n) = 32 - 28 = 4 bits
+• Total Addresses = 2^n = 2^4 = 16 addresses
+• Usable Host Addresses = 2^n - 2 = 14 hosts
+
+Subnet Boundary Breakdown:
+┌─────────────────────────┬────────────────────────────────────────────────────┐
+│ Network Address         │ 192.168.1.0   (All host bits 0000 - Identifies net)│
+│ First Usable Host       │ 192.168.1.1   (Assigned to router gateway / host)  │
+│ Last Usable Host        │ 192.168.1.14  (Last assignable endpoint)           │
+│ Broadcast Address       │ 192.168.1.15  (All host bits 1111 - Broadcast)     │
+└─────────────────────────┴────────────────────────────────────────────────────┘
+```
+
 **Common Interview Questions:**
 - How many usable hosts in a /28 subnet? *(2^4 - 2 = 14)*
 
@@ -96,6 +184,30 @@ Client → ACK → Server
 ### 2.4.1 ARP (Address Resolution Protocol)
 **Meaning:** Resolves an IP address to a MAC address on a local network.
 **Security relevance:** **ARP spoofing/poisoning** lets an attacker associate their MAC with another host's IP, enabling Man-in-the-Middle attacks.
+
+```
+Normal ARP Resolution vs ARP Poisoning (Man-in-the-Middle):
+
+Normal Broadcast Resolution:
+Victim (192.168.1.50) ──► Broadcast: "Who has 192.168.1.1? Tell 192.168.1.50"
+Gateway (192.168.1.1) ──► Unicast Reply: "192.168.1.1 is at AA:AA:AA:AA:AA:AA"
+
+ARP Poisoning Attack (Attacker injects fake Gratuitous ARP packets):
+                [ Gateway: 192.168.1.1 | MAC: AA:AA:AA:AA:AA:AA ]
+                          ▲                      ▲
+           Attacker tells │                      │ Attacker tells Gateway:
+         Gateway: "I am   │                      │ "I am 192.168.1.50 at CC"
+           192.168.1.50"  │                      │
+                          ▼                      ▼
+                 ┌────────────────────────────────┐
+                 │  Attacker (MAC: CC:CC:CC:CC)   │ ◄── Intercepts / Sniffs / Modifies
+                 └────────────────────────────────┘
+                          ▲                      ▲
+           Victim sends   │                      │ Attacker sends Gratuitous Reply:
+           packets to CC  │                      │ "192.168.1.1 is at CC:CC:CC:CC"
+                          ▼                      ▼
+                [ Victim: 192.168.1.50 | MAC: BB:BB:BB:BB:BB:BB ]
+```
 
 ### 2.4.2 DNS (Domain Name System)
 **Meaning:** Resolves domain names to IP addresses.
@@ -114,6 +226,20 @@ Client → ACK → Server
 ### 2.4.3 DHCP (Dynamic Host Configuration Protocol)
 **Meaning:** Automatically assigns IP addresses and network config to devices.
 **Process (DORA):** Discover → Offer → Request → Acknowledge.
+
+```
+DHCP 4-Step DORA Message Exchange:
+Client (0.0.0.0:68)                                     DHCP Server (192.168.1.1:67)
+  │                                                                 │
+  ├────── 1. DHCP Discover (Broadcast: 255.255.255.255:67) ────────►│ "Any DHCP server out there?"
+  │                                                                 │
+  │◄───── 2. DHCP Offer (Unicast/Broadcast: IP 192.168.1.100) ──────┤ "I can lease you 192.168.1.100"
+  │                                                                 │
+  ├────── 3. DHCP Request (Broadcast: "I choose 192.168.1.100") ───►│ "I accept server 192.168.1.1 offer"
+  │                                                                 │
+  │◄───── 4. DHCP Acknowledge (DHCPACK: lease confirmation) ────────┤ "Confirmed! IP bound to your MAC"
+```
+
 **Security relevance:** Rogue DHCP servers can redirect traffic; DHCP starvation is a DoS technique.
 
 **Common Interview Questions:**
@@ -287,16 +413,50 @@ Client                                                  Server
 ---
 
 ## 2.10 DNS Resolution — Step by Step
-**Meaning:** The full lookup path a DNS query takes to resolve a hostname to an IP.
+**Meaning:** The full lookup path a DNS query takes to resolve a hostname to an IP address across the hierarchical domain tree.
+
 ```
-1. Browser cache check
-2. OS cache check
-3. Query sent to Recursive Resolver (usually ISP or 8.8.8.8/1.1.1.1)
-4. Resolver queries a Root Server → returns TLD server address
-5. Resolver queries TLD Server (.com, .in, etc.) → returns Authoritative NS
-6. Resolver queries Authoritative Name Server → returns the IP (A/AAAA record)
-7. Resolver caches and returns result to client
+Hierarchical DNS Resolution Architecture:
+
+               [ Client Browser ]
+                     │ ▲
+       1. Query:     │ │ 8. Resolved IP:
+   "www.example.com" │ │    93.184.216.34
+                     ▼ │
+         ┌─────────────────────────┐
+         │ Recursive DNS Resolver  │ (ISP / 8.8.8.8 / 1.1.1.1)
+         └──────┬────────────▲─────┘
+                │            │
+       2. Query │            │ 3. Referral:
+          Root  │            │    Ask ".com" TLD Server
+                ▼            │
+         ┌─────────────────────────┐
+         │  Root DNS Server (.)    │
+         └─────────────────────────┘
+                │            ▲
+       4. Query │            │ 5. Referral:
+          TLD   │            │    Ask "example.com" Authoritative Server
+                ▼            │
+         ┌─────────────────────────┐
+         │  TLD Server (.com)      │
+         └─────────────────────────┘
+                │            ▲
+       6. Query │            │ 7. Answer:
+          Auth  │            │    A Record = 93.184.216.34
+                ▼            │
+         ┌─────────────────────────┐
+         │ Authoritative DNS Server│ (Holds domain's actual authoritative records)
+         └─────────────────────────┘
 ```
+
+**Step-by-Step Traversal:**
+1. **Local Cache Check:** Browser cache $\rightarrow$ OS DNS resolver cache $\rightarrow$ local `hosts` file.
+2. **Recursive Resolver:** If not cached, query travels to the recursive DNS server (e.g., ISP or `8.8.8.8`).
+3. **Root Nameserver (`.`):** Directs the resolver to the appropriate Top-Level Domain (TLD) server.
+4. **TLD Nameserver (`.com`):** Directs the resolver to the domain's authoritative nameservers.
+5. **Authoritative Nameserver:** Returns the definitive IP address mapping (e.g., `A` record).
+6. **Client Response & Caching:** Resolver caches the record according to its **TTL (Time to Live)** and delivers the IP to the browser.
+
 **Common Interview Questions:**
 - Walk me through what happens when you type a domain into a browser (DNS portion).
 - What is a recursive resolver vs an authoritative name server?

@@ -32,6 +32,27 @@ Ciphertext ──[ Decryption Algorithm + Key ]───► Plaintext
 > 1. Use **Asymmetric Cryptography** (ECDHE/RSA) to securely negotiate a shared symmetric key without transmitting it over the wire.
 > 2. Use **Symmetric Cryptography** (AES-GCM) with that negotiated session key to encrypt bulk traffic for maximum throughput.
 
+```
+Hybrid Encryption Architecture (Used in TLS / HTTPS / PGP):
+
+Client                                                          Server
+  │                                                               │
+  │ 1. Request Server Public Key (Cert)                           │
+  ├──────────────────────────────────────────────────────────────►│
+  │◄──────────────────────────────────────────────────────────────┤ (Sends Public Key)
+  │                                                               │
+  │ 2. Generate random Symmetric Session Key (e.g., AES-256)      │
+  │ 3. Encrypt Session Key with Server's Public Key               │
+  │                                                               │
+  │ 4. Transmit [ Encrypted Session Key ]                         │
+  ├──────────────────────────────────────────────────────────────►│
+  │                                                               │ 5. Decrypts Session Key
+  │                                                               │    using Server Private Key
+  │                                                               │
+  │◄════════ 6. High-Speed Bulk Data Encrypted with AES-GCM ═════►│
+  │          (Both sides use negotiated symmetric session key)    │
+```
+
 ---
 
 ## 5.3 Symmetric Ciphers & Modes of Operation
@@ -71,6 +92,26 @@ How a block cipher encrypts data spanning multiple sequential blocks:
 
 ### 5.4.3 Diffie-Hellman & Perfect Forward Secrecy (PFS)
 * **Diffie-Hellman (DH):** A mathematical protocol allowing two parties to derive a shared symmetric secret over an untrusted, public communication channel without transmitting the secret itself.
+
+```
+Diffie-Hellman Key Exchange (Conceptual Flow):
+
+Alice (Private secret: a)                               Bob (Private secret: b)
+  │                                                               │
+  ├────── Agreed Public Base Parameters: [ Prime p, Generator g ] ┤
+  │                                                               │
+  │ Computes Public Value: A = g^a mod p                          │ Computes Public Value: B = g^b mod p
+  │                                                               │
+  ├────── Sends Public Value A ──────────────────────────────────►│
+  │◄───── Sends Public Value B ───────────────────────────────────┤
+  │                                                               │
+  │ Derives Shared Secret:                                        │ Derives Shared Secret:
+  │   K = B^a mod p                                               │   K = A^b mod p
+  │     = (g^b)^a mod p = g^(ab) mod p                            │     = (g^a)^b mod p = g^(ab) mod p
+  ▼                                                               ▼
+[ Both compute identical secret key K without ever sending 'a', 'b', or 'K' over the wire! ]
+```
+
 * **Static DH vs Ephemeral Diffie-Hellman (DHE / ECDHE):**
   * In Static DH/RSA, the server uses a persistent private key to encrypt the pre-master secret. If an attacker records encrypted network traffic today and steals the server's private key years later, they can retroactively decrypt all historical traffic.
   * In **Ephemeral Diffie-Hellman (ECDHE)**, a temporary, unique key pair is generated for each individual session and discarded immediately after session key derivation.
@@ -148,13 +189,31 @@ A digital certificate binds an entity’s identity (e.g., `google.com`) to their
 3. **Leaf / End-Entity Certificate:** The certificate installed on web servers, signed by the Intermediate CA.
 
 ```
-[ Root CA ] (Self-signed, stored in OS trust store)
-     │
-     ▼
-[ Intermediate CA ] (Signs end-entity certificates)
-     │
-     ▼
-[ Leaf Certificate: example.com ] (Presented to browser)
+PKI Hierarchical Chain of Trust & Verification Flow:
+
+┌────────────────────────────────────────────────────────┐
+│ Root CA Certificate (e.g., DigiCert Global Root CA)    │
+│ • Self-signed with Root Private Key                    │ ◄── Pre-installed in Browser / OS
+│ • Stored in Trusted Root Certification Authorities     │     Trust Store (Anchor of Trust)
+└───────────────────────────┬────────────────────────────┘
+                            │ Signs Intermediate Cert using Root Private Key
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ Intermediate CA Certificate (e.g., DigiCert TLS CA G4) │
+│ • Validated using Root CA's pre-trusted Public Key     │
+│ • Issues & signs end-entity server certificates        │
+└───────────────────────────┬────────────────────────────┘
+                            │ Signs Leaf Cert using Intermediate Private Key
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ Leaf Certificate (e.g., github.com)                    │
+│ • Presented by Web Server to Browser in TLS Handshake  │
+│ • Validated by Browser decrypting CA signature with    │
+│   Intermediate CA's Public Key                         │
+└────────────────────────────────────────────────────────┘
+
+Trust Verification Path (Bottom ──► Up):
+Browser receives Leaf ──► Validates Intermediate ──► Matches Root in Trust Store = SECURE!
 ```
 
 ### 5.6.4 Certificate Revocation: CRL vs OCSP

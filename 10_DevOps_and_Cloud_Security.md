@@ -56,6 +56,34 @@
 | Secret Scanning | Detects hardcoded credentials/API keys committed to code repositories |
 | Container Scanning | Scans container images for vulnerabilities/misconfigurations before deployment |
 
+```
+DevSecOps Automated CI/CD Pipeline Gates ("Shift-Left Security"):
+
+  [ Developer Workstation ]
+        │ • Pre-commit hook: Git-secrets / Trufflehog (Blocks accidental API key commits)
+        ▼
+  [ Git Repository (GitHub / GitLab) ]
+        │ • Branch protection rules & Peer Pull Request review
+        ▼
+  [ Continuous Integration (CI Build) ]
+        ├────► [ SAST Scanner ] (Semgrep / SonarQube: Scans source code flaws)
+        ├────► [ SCA Scanner ]  (Snyk / Dependabot: Checks vulnerable open-source CVEs)
+        └────► [ IaC Scanner ]  (Checkov / tfsec: Audits Terraform/CloudFormation templates)
+        │
+        ▼ (Builds Artifact / Docker Image)
+  [ Container Registry ]
+        │ • Container Image Scanner (Trivy / Clair: Checks OS packages & base image CVEs)
+        ▼
+  [ Staging / QA Environment ]
+        │ • DAST Scanner (OWASP ZAP: Active black-box vulnerability testing)
+        │ • Penetration Testing / API security validation
+        ▼
+  [ Production Cloud Deployment ]
+        │ • Runtime Security: EDR, Cloud Security Posture Management (CSPM), CWPP
+        ▼
+  [ Continuous Monitoring & SIEM ]
+```
+
 **Common Interview Questions:**
 - Difference between SAST and DAST?
 - Why is SCA (dependency scanning) important given how much modern code relies on third-party libraries?
@@ -75,6 +103,24 @@
 | Startup time | Seconds | Minutes |
 | Resource overhead | Lightweight | Heavier |
 | Security boundary | Weaker (shared kernel = larger attack surface if kernel compromised) | Stronger isolation |
+
+```
+Containers vs Virtual Machines Architecture:
+
+Virtual Machine Architecture:                Container Architecture:
+┌──────────────────────────────────────┐     ┌──────────────────────────────────────┐
+│ App 1     │ App 2     │ App 3        │     │ App 1     │ App 2     │ App 3        │
+├───────────┼───────────┼──────────────┤     ├───────────┼───────────┼──────────────┤
+│ Bins/Libs │ Bins/Libs │ Bins/Libs    │     │ Bins/Libs │ Bins/Libs │ Bins/Libs    │
+├───────────┼───────────┼──────────────┤     ├──────────────────────────────────────┤
+│ Guest OS  │ Guest OS  │ Guest OS     │     │ Container Engine (Docker / containerd)│
+├──────────────────────────────────────┤     ├──────────────────────────────────────┤
+│ Hypervisor (Type 1: ESXi / Type 2)   │     │ Host Operating System (Shared Kernel)│
+├──────────────────────────────────────┤     ├──────────────────────────────────────┤
+│ Physical Hardware (CPU, RAM, Disk)   │     │ Physical Hardware                    │
+└──────────────────────────────────────┘     └──────────────────────────────────────┘
+(Full OS isolation - Heavyweight)             (Process-level isolation - Lightweight)
+```
 
 ### 3.3 Kubernetes (Orchestration)
 **Meaning:** Platform for automating deployment, scaling, and management of containerized applications across clusters.
@@ -127,6 +173,24 @@
 
 ### 5.3 Shared Responsibility Model
 > **Golden Rule:** The Cloud Service Provider (CSP) is responsible for **Security OF the Cloud** (physical facilities, hardware, hypervisors, global infrastructure). The Customer is responsible for **Security IN the Cloud** (customer data, IAM, firewall rules, OS patching for IaaS, and encryption).
+
+```
+Cloud Shared Responsibility Model (SPI Division):
+
+   Stack Layer           On-Premises         IaaS               PaaS               SaaS
+┌─────────────────────┬────────────────┬─────────────────┬─────────────────┬─────────────────┐
+│ Data & Access (IAM) │ Customer       │ Customer        │ Customer        │ Customer        │
+├─────────────────────┼────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Application Logic   │ Customer       │ Customer        │ Customer        │ Cloud Provider  │
+├─────────────────────┼────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Runtime / OS        │ Customer       │ Customer        │ Cloud Provider  │ Cloud Provider  │
+├─────────────────────┼────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Virtualization      │ Customer       │ Cloud Provider  │ Cloud Provider  │ Cloud Provider  │
+├─────────────────────┼────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Physical Hardware   │ Customer       │ Cloud Provider  │ Cloud Provider  │ Cloud Provider  │
+└─────────────────────┴────────────────┴─────────────────┴─────────────────┴─────────────────┘
+                      ◄── All Customer         Shared Responsibilities       All Provider ──►
+```
 
 | Security Responsibility Layer | IaaS | PaaS | SaaS |
 |---|---|---|---|

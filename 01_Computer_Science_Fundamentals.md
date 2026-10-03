@@ -10,15 +10,62 @@
 | Insert/Delete | O(n) (shifting required) | O(1) if node reference known |
 | Use Case | Fast lookups, fixed-ish size | Frequent insert/delete, unknown size |
 
+```
+Array (Contiguous Memory Allocation):
+Indices:        [0]        [1]        [2]        [3]
+Addresses:    0x1000     0x1004     0x1008     0x100C
+            ┌──────────┬──────────┬──────────┬──────────┐
+Values:     │  Data A  │  Data B  │  Data C  │  Data D  │  ──► O(1) Access via: Base + (Index * Size)
+            └──────────┴──────────┴──────────┴──────────┘
+
+Singly Linked List (Disjoint Heap Nodes with Pointers):
+ Head (0x1040)
+   │
+   ▼
+ ┌──────────┬──────────┐       ┌──────────┬──────────┐       ┌──────────┬──────────┐
+ │  Data A  │  Next ───┼──────►│  Data B  │  Next ───┼──────►│  Data C  │   NULL   │
+ └──────────┴──────────┘       └──────────┴──────────┘       └──────────┴──────────┘
+   Node at 0x1040                Node at 0x2088                Node at 0x15F0
+   (Sequential O(n) Traversal required | O(1) insertion/deletion once pointer is held)
+```
+
 ### 1.2 Stack vs Queue
 | Aspect | Stack | Queue |
 |---|---|---|
 | Order | LIFO (Last In First Out) | FIFO (First In First Out) |
 | Example | Function call stack, undo operations | Task scheduling, print queue |
 
+```
+Stack (LIFO - Last In, First Out):
+        Push  │  ▲ Pop
+              ▼  │
+          ┌────────┐ ◄── Top of Stack (TOS)
+          │ Item 3 │
+          ├────────┤
+          │ Item 2 │
+          ├────────┤
+          │ Item 1 │ ◄── Bottom of Stack
+          └────────┘
+
+Queue (FIFO - First In, First Out):
+  Enqueue (Back / Rear)                                  Dequeue (Front)
+  ─────────────────────►  ┌────────┬────────┬────────┐  ────────────────►
+                          │ Item 3 │ Item 2 │ Item 1 │
+                          └────────┴────────┴────────┘
+                             Rear              Front
+```
+
 ### 1.3 Hash Table / Hash Map
 **Meaning:** Stores key-value pairs using a hash function to map keys to array indices for near O(1) average lookup.
 **Security relevance:** Hash tables underpin how passwords are stored (hashed, not the structure itself, but the lookup concept matters for rainbow table discussions).
+
+```
+Key              Hash Function             Bucket Array (with Collision Chaining)
+"Alice"   ───► [ Hash("Alice") % 4 ] ──► [0] ──► ["Alice" : 95] ──► ["Dave" : 88] ──► NULL (Collision Chain)
+"Bob"     ───► [ Hash("Bob")   % 4 ] ──► [1] ──► ["Bob"   : 74] ──► NULL
+"Charlie" ───► [ Hash("Charlie")% 4 ] ──► [2] ──► NULL
+                                         [3] ──► ["Eve"   : 91] ──► NULL
+```
 
 ### 1.4 Trees & Graphs (Awareness Level)
 - **Tree:** Hierarchical structure (e.g., file systems, DNS hierarchy, Active Directory OU structure).
@@ -69,6 +116,41 @@
 | **LEFT JOIN** | Returns all records from left table + matched records from right | All left rows; NULLs for unmatched right rows |
 | **RIGHT JOIN** | Returns all records from right table + matched records from left | All right rows; NULLs for unmatched left rows |
 | **FULL OUTER JOIN** | Returns all records when there is a match in either left or right | All rows from both; NULLs where conditions don't match |
+
+```
+Sample Tables:
+  Table A: users                    Table B: roles
+  ┌────┬─────────┬─────────┐        ┌────┬───────────┐
+  │ id │ username│ role_id │        │ id │ role_name │
+  ├────┼─────────┼─────────┤        ├────┼───────────┤
+  │ 1  │ alice   │ 10      │        │ 10 │ Admin     │
+  │ 2  │ bob     │ 20      │        │ 20 │ Analyst   │
+  │ 3  │ guest   │ NULL    │        │ 30 │ Auditor   │
+  └────┴─────────┴─────────┘        └────┴───────────┘
+
+Visualizing Join Results:
+
+  INNER JOIN:                       LEFT JOIN:
+    users     roles                   users     roles
+    ┌─────┬───┬─────┐                 ┌─────┬───┬─────┐
+    │     │███│     │                 │█████│███│     │
+    └─────┴───┴─────┘                 └─────┴───┴─────┘
+    Matches:                          All Left + Matches:
+    • alice (Admin)                   • alice (Admin)
+    • bob   (Analyst)                 • bob   (Analyst)
+                                      • guest (NULL)
+
+  RIGHT JOIN:                       FULL OUTER JOIN:
+    users     roles                   users     roles
+    ┌─────┬───┬─────┐                 ┌─────┬───┬─────┐
+    │     │███│█████│                 │█████│███│█████│
+    └─────┴───┴─────┘                 └─────┴───┴─────┘
+    All Right + Matches:              Complete Union:
+    • alice (Admin)                   • alice (Admin)
+    • bob   (Analyst)                 • bob   (Analyst)
+    • NULL  (Auditor)                 • guest (NULL)
+                                      • NULL  (Auditor)
+```
 
 ```sql
 -- Example: Identifying users and their associated role permissions
@@ -122,6 +204,47 @@ SELECT * FROM users WHERE username = 'admin' AND password = 'password123';
 | Crash Impact | If one process crashes, other processes remain unaffected | If one thread crashes (e.g., segfault), the entire parent process may terminate |
 | Communication | Inter-Process Communication (IPC): pipes, sockets, shared memory, message queues | Direct memory access within shared heap (requires synchronization: mutexes/semaphores) |
 
+```
+Process Isolation vs Multi-Threading Memory Architecture:
+
+  PROCESS 1 (PID 1024)                          PROCESS 2 (PID 2048)
+┌──────────────────────────────────────┐      ┌──────────────────────────────────────┐
+│  Code / Text Segment (Instructions)  │      │  Code / Text Segment                 │
+├──────────────────────────────────────┤      ├──────────────────────────────────────┤
+│  Data & BSS (Global / Static Vars)   │      │  Data & BSS                          │
+├──────────────────────────────────────┤      ├──────────────────────────────────────┤
+│  Heap (Shared dynamic memory)        │      │  Heap                                │
+├──────────────────┬───────────────────┤      ├──────────────────────────────────────┤
+│ Thread 1 Stack   │ Thread 2 Stack    │      │ Stack (Single Thread)                │
+└──────────────────┴───────────────────┘      └──────────────────────────────────────┘
+  (Isolated Memory - Hardware MMU protected)    (Cannot access Process 1 memory directly)
+```
+
+#### Process Virtual Address Space Layout (Linux x86-64)
+```
+  High Memory: 0xFFFFFFFFFFFFFFFF
+  ┌────────────────────────────────────────────────────────┐
+  │ Kernel Space (Protected OS Kernel Code & Data)         │
+  ├────────────────────────────────────────────────────────┤ 0x7FFFFFFFFFFF
+  │ User Stack (Local function variables, call frames)     │
+  │                   │                                    │
+  │                   ▼ (Grows Downward toward lower addr) │
+  │                                                        │
+  │                   ▲ (Grows Upward toward higher addr)  │
+  │                   │                                    │
+  │ User Heap (Dynamic memory allocated via malloc/new)    │
+  ├────────────────────────────────────────────────────────┤
+  │ BSS Segment (Uninitialized global and static variables)│
+  ├────────────────────────────────────────────────────────┤
+  │ Data Segment (Initialized global and static variables) │
+  ├────────────────────────────────────────────────────────┤
+  │ Text / Code Segment (Read-only executable instructions)│
+  ├────────────────────────────────────────────────────────┤ 0x0000000000400000
+  │ Reserved / Unmapped (Null pointer trap zone)           │
+  └────────────────────────────────────────────────────────┘ 0x0000000000000000
+  Low Memory
+```
+
 ### 4.2 CPU Scheduling
 - **Preemptive:** OS can interrupt an active process to allocate CPU to a higher-priority task (e.g., Round Robin, Priority Scheduling with preemption).
 - **Non-Preemptive:** Process holds the CPU until it voluntarily terminates or enters a wait state (e.g., FCFS).
@@ -139,6 +262,20 @@ SELECT * FROM users WHERE username = 'admin' AND password = 'password123';
 3. **No Preemption:** Resources cannot be forcibly confiscated; they can only be released voluntarily by the holding process.
 4. **Circular Wait:** A closed chain of processes exists where each process waits for a resource held by the next process in the chain ($P_0 \rightarrow P_1 \rightarrow P_2 \rightarrow P_0$).
 
+```
+Circular Wait Condition (Resource Allocation Graph):
+
+         Holds                    Requests
+    ┌──────────────► [ Process 1 ] ──────────────┐
+    │                                            ▼
+[ Resource 1 ]                              [ Resource 2 ]
+    ▲                                            │
+    └────────────── [ Process 2 ] ◄──────────────┘
+         Requests                 Holds
+
+(Both processes wait infinitely for the other to release the needed resource)
+```
+
 **Handling Deadlocks:**
 - **Deadlock Prevention:** Invalidate at least one of the 4 Coffman conditions (e.g., impose strict global resource ordering to eliminate circular wait).
 - **Deadlock Avoidance:** Dynamically evaluate resource requests using algorithms like **Banker's Algorithm** (ensuring the system stays in a "safe state").
@@ -151,12 +288,52 @@ SELECT * FROM users WHERE username = 'admin' AND password = 'password123';
   - Physical RAM is divided into matching fixed-size chunks called **Frames**.
   - **Page Table:** Hardware/OS structure mapping logical pages to physical frames.
   - **TLB (Translation Lookaside Buffer):** Fast CPU cache storing recent virtual-to-physical address translations.
+
+```
+Virtual Address to Physical RAM Translation:
+
+ Virtual Address (Generated by CPU):
+ ┌───────────────────────────┬───────────────────────────┐
+ │     Page Number (p)       │        Offset (d)         │
+ └─────────────┬─────────────┴─────────────┬─────────────┘
+               │ Table Lookup              │
+               ▼                           │
+        ┌─────────────┐                    │
+        │ Page Table  │                    │
+        ├─────────────┤                    │
+        │ Page 0 ──►F2│                    │
+        │ Page 1 ──►F5│──────┐             │
+        │ Page 2 ──►F0│      │ Frame       │ Unmodified
+        └─────────────┘      ▼ Number      ▼ Offset
+ Physical RAM Address:   ┌───────────┬───────────┐
+                         │ Frame (f) │ Offset (d)│
+                         └───────────┴───────────┘
+```
+
 - **Key Concepts:**
   - **Page Fault:** Hardware interrupt raised when a program accesses a page that is mapped in virtual memory but not currently loaded in physical RAM (OS must fetch it from disk/swap).
   - **Thrashing:** System spending more time swapping pages in/out of secondary storage than executing actual instructions, collapsing performance.
 
 ### 4.5 Buffer Overflow (Low-Level Security Link)
 Writing data beyond the allocated buffer boundaries overwrites adjacent stack frames (including the function return address), allowing attackers to redirect CPU execution to injected shellcode. Prevented by canary values (StackGuard), ASLR (Address Space Layout Randomization), and DEP/NX (Non-Executable stack).
+
+```
+Stack Frame Memory Layout during a Buffer Overflow:
+
+ Higher Memory Addresses
+ ┌────────────────────────────────────────────────────────┐
+ │ Caller Stack Frame (Arguments, caller context)         │
+ ├────────────────────────────────────────────────────────┤
+ │ Saved Return Address (EIP / RIP)                       │ ◄── [Target]: Overwritten to hijack control!
+ ├────────────────────────────────────────────────────────┤
+ │ Saved Base Pointer (EBP / RBP)                         │ ◄── Overwritten
+ ├────────────────────────────────────────────────────────┤
+ │ Stack Canary (Random cookie placed by compiler)        │ ◄── [Defense]: If modified, program halts
+ ├────────────────────────────────────────────────────────┤
+ │ Local Buffer: char buf[64]                             │ ◄── Attacker supplies 128 bytes of input!
+ └────────────────────────────────────────────────────────┘     (Spills upward over adjacent memory)
+ Lower Memory Addresses (Stack grows downward towards 0x0)
+```
 
 **Common Interview Questions:**
 - What are the four Coffman conditions for a deadlock, and how can breaking one prevent it?
@@ -264,6 +441,29 @@ Writing data beyond the allocated buffer boundaries overwrites adjacent stack fr
 |---|---|---|---|
 | **Compile-Time (Static)** | During compilation | **Method Overloading** (same method name, different parameter types/count) | `calculateRisk(int score)` vs `calculateRisk(int score, float multiplier)` |
 | **Runtime (Dynamic)** | During execution | **Method Overriding** (subclass provides custom implementation of base method via `vtable`) | `Firewall.filter()` overriding `NetworkDevice.filter()` |
+
+```
+OOP Class Hierarchy & Runtime Polymorphism (Dynamic Dispatch):
+
+               ┌─────────────────────────────────────┐
+               │         NetworkDevice (Base)        │
+               ├─────────────────────────────────────┤
+               │ + filterPacket(Packet p)            │
+               └──────────────────▲──────────────────┘
+                                  │ (Inherits)
+             ┌────────────────────┴────────────────────┐
+             │                                         │
+┌─────────────────────────────┐           ┌─────────────────────────────┐
+│       Firewall (Child)      │           │         Router (Child)      │
+├─────────────────────────────┤           ├─────────────────────────────┤
+│ + filterPacket(Packet p)    │           │ + filterPacket(Packet p)    │
+│   [Stateful Inspection]     │           │   [Routing Table / ACL]     │
+└─────────────────────────────┘           └─────────────────────────────┘
+
+Runtime Execution via Virtual Method Table (vtable):
+  NetworkDevice* dev = new Firewall();
+  dev->filterPacket(pkt);  ──► Resolves Firewall::filterPacket() at runtime!
+```
 
 **Common Interview Questions:**
 - Difference between Abstraction and Encapsulation? *(Abstraction hides complexity by showing **what** an object does; Encapsulation hides internal data to protect **how** state is manipulated)*

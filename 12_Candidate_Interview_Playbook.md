@@ -124,6 +124,37 @@ When an interviewer asks *"Walk me through your academic project / internship"*,
 
 ### 12.4.2 The "Think Aloud" Protocol for Technical Troubleshooting
 If an interviewer asks a scenario question (e.g., *"A server is experiencing high CPU usage and outbound connections to an unknown IP; walk me through your investigation"*):
+
+```
+Live Incident Triage & Investigation Decision Flow:
+
+        [ Alert: High CPU / Outbound Socket / Unknown IP ]
+                                │
+                                ▼
+            [ 1. Process Discovery: ps aux / top ]
+                                │ Identify suspicious PID
+                                ▼
+            [ 2. File Artifact Inspection: /proc/<PID>/exe ]
+                                │ Locate binary on disk
+                                ▼
+            [ 3. Network Verification: ss -tulnp / lsof -i ]
+                                │ Confirm remote malicious IP:Port
+                                ▼
+    ┌────────────────────────────────────────────────────────┐
+    │ 4. Containment (Decision Point)                        │
+    │  • Do NOT pull the power plug (preserves volatile RAM) │
+    │  • Issue EDR Network Isolation (Cut off C2)            │
+    │  • Suspend Process: kill -STOP <PID> (Freezes malware) │
+    └───────────────────────────┬────────────────────────────┘
+                                │
+                                ▼
+            [ 5. Memory & Disk Forensic Capture ]
+                                │ Dump RAM & inspect disk strings
+                                ▼
+            [ 6. Eradication & Root Cause Analysis ]
+               (Inspect auth.log, crontab, systemd, web logs)
+```
+
 1. **Clarify & State Assumptions:** *"I will assume this is a production Linux web server and I have SSH terminal access."*
 2. **Phase 1: Identification & Process Triage:**
    * Run `top` or `ps aux --sort=-%cpu` to identify the rogue PID.

